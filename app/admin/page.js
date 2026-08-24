@@ -8,15 +8,22 @@ export default function AdminPage() {
   const [password, setPassword] = useState('');
 
   const [fixtures, setFixtures] = useState([]);
-  const [showFixtureForm, setShowFixtureForm] = useState(false);
+  const [results, setResults] = useState([]);
+  const [players, setPlayers] = useState([]);
+  const [achievements, setAchievements] = useState([]);
+  const [legends, setLegends] = useState([]);
+  const [announcements, setAnnouncements] = useState([]);
 
   const [activeSection, setActiveSection] = useState(null);
+  const [loading, setLoading] = useState(false);
 
+  // FIXTURE
   const [opponent, setOpponent] = useState('');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [venue, setVenue] = useState('Home');
 
+  // RESULT
   const [resultOpponent, setResultOpponent] = useState('');
   const [resultDate, setResultDate] = useState('');
   const [homeScore, setHomeScore] = useState('');
@@ -25,36 +32,84 @@ export default function AdminPage() {
   const [resultStatus, setResultStatus] = useState('Completed');
   const [resultNotes, setResultNotes] = useState('');
 
+  // PLAYER
   const [playerName, setPlayerName] = useState('');
   const [playerNumber, setPlayerNumber] = useState('');
   const [playerPosition, setPlayerPosition] = useState('');
   const [playerImage, setPlayerImage] = useState('');
 
+  // ACHIEVEMENT
   const [achievementTitle, setAchievementTitle] = useState('');
   const [achievementYear, setAchievementYear] = useState('');
   const [achievementDescription, setAchievementDescription] = useState('');
+  const [achievementImage, setAchievementImage] = useState('');
 
+  // LEGEND
   const [legendName, setLegendName] = useState('');
   const [legendPosition, setLegendPosition] = useState('');
   const [legendBio, setLegendBio] = useState('');
   const [legendImage, setLegendImage] = useState('');
 
-  async function loadFixtures() {
-    try {
-      const response = await fetch('/api/fixtures');
-      const data = await response.json();
+  // ANNOUNCEMENT
+  const [announcementTitle, setAnnouncementTitle] = useState('');
+  const [announcementDate, setAnnouncementDate] = useState('');
+  const [announcementType, setAnnouncementType] = useState('General');
+  const [announcementMessage, setAnnouncementMessage] = useState('');
+  const [announcementImage, setAnnouncementImage] = useState('');
 
-      if (response.ok) {
-        setFixtures(data);
+  async function loadData() {
+    setLoading(true);
+
+    try {
+      const [
+        fixturesResponse,
+        resultsResponse,
+        playersResponse,
+        achievementsResponse,
+        legendsResponse,
+        announcementsResponse,
+      ] = await Promise.all([
+        fetch('/api/fixtures'),
+        fetch('/api/results'),
+        fetch('/api/players'),
+        fetch('/api/achievements'),
+        fetch('/api/legends'),
+        fetch('/api/announcements'),
+      ]);
+
+      if (fixturesResponse.ok) {
+        setFixtures(await fixturesResponse.json());
+      }
+
+      if (resultsResponse.ok) {
+        setResults(await resultsResponse.json());
+      }
+
+      if (playersResponse.ok) {
+        setPlayers(await playersResponse.json());
+      }
+
+      if (achievementsResponse.ok) {
+        setAchievements(await achievementsResponse.json());
+      }
+
+      if (legendsResponse.ok) {
+        setLegends(await legendsResponse.json());
+      }
+
+      if (announcementsResponse.ok) {
+        setAnnouncements(await announcementsResponse.json());
       }
     } catch (error) {
-      console.error('Failed to load fixtures:', error);
+      console.error('Failed to load admin data:', error);
+    } finally {
+      setLoading(false);
     }
   }
 
   useEffect(() => {
     if (loggedIn) {
-      loadFixtures();
+      loadData();
     }
   }, [loggedIn]);
 
@@ -65,13 +120,41 @@ export default function AdminPage() {
     ) {
       setLoggedIn(true);
     } else {
-      alert('Incorrect email or password');
+      alert('Incorrect email or password.');
     }
+  }
+
+  function openSection(section) {
+    setActiveSection(
+      activeSection === section ? null : section
+    );
+  }
+
+  // Converts selected picture into a displayable permanent data URL.
+  function handleImageUpload(file, setter) {
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file.');
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      setter(reader.result);
+    };
+
+    reader.onerror = () => {
+      alert('Unable to read the image.');
+    };
+
+    reader.readAsDataURL(file);
   }
 
   async function addFixture() {
     if (!opponent || !date || !time) {
-      alert('Please fill in opponent, date and time.');
+      alert('Opponent, date and time are required.');
       return;
     }
 
@@ -102,75 +185,227 @@ export default function AdminPage() {
       setDate('');
       setTime('');
       setVenue('Home');
-      setShowFixtureForm(false);
 
-      alert('Fixture saved successfully!');
+      alert('Fixture saved permanently.');
     } catch (error) {
       console.error(error);
-      alert('Could not connect to the database.');
+      alert('Failed to save fixture.');
     }
   }
 
-  function openSection(section) {
-    setActiveSection(
-      activeSection === section ? null : section
-    );
-  }
-
-  function addResult() {
+  async function addResult() {
     if (!resultOpponent || !resultDate) {
-      alert('Please enter the opponent and match date.');
+      alert('Opponent and match date are required.');
       return;
     }
 
-    alert('Result form is ready. Database connection will be connected next.');
+    try {
+      const response = await fetch('/api/results', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          opponent: resultOpponent,
+          match_date: resultDate,
+          home_score: Number(homeScore) || 0,
+          away_score: Number(awayScore) || 0,
+          venue: resultVenue,
+          status: resultStatus,
+          notes: resultNotes,
+        }),
+      });
 
-    setResultOpponent('');
-    setResultDate('');
-    setHomeScore('');
-    setAwayScore('');
-    setResultNotes('');
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error || 'Failed to save result.');
+        return;
+      }
+
+      setResults((current) => [data, ...current]);
+
+      setResultOpponent('');
+      setResultDate('');
+      setHomeScore('');
+      setAwayScore('');
+      setResultVenue('Home');
+      setResultStatus('Completed');
+      setResultNotes('');
+
+      alert('Result saved permanently.');
+    } catch (error) {
+      console.error(error);
+      alert('Failed to save result.');
+    }
   }
 
-  function addPlayer() {
+  async function addPlayer() {
     if (!playerName || !playerNumber || !playerPosition) {
-      alert('Please fill in player name, number and position.');
+      alert('Player name, number and position are required.');
       return;
     }
 
-    alert('Player added successfully!');
+    try {
+      const response = await fetch('/api/players', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: playerName,
+          number: Number(playerNumber),
+          position: playerPosition,
+          image_url: playerImage,
+        }),
+      });
 
-    setPlayerName('');
-    setPlayerNumber('');
-    setPlayerPosition('');
-    setPlayerImage('');
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error || 'Failed to save player.');
+        return;
+      }
+
+      setPlayers((current) => [data, ...current]);
+
+      setPlayerName('');
+      setPlayerNumber('');
+      setPlayerPosition('');
+      setPlayerImage('');
+
+      alert('Player saved permanently.');
+    } catch (error) {
+      console.error(error);
+      alert('Failed to save player.');
+    }
   }
 
-  function addAchievement() {
+  async function addAchievement() {
     if (!achievementTitle || !achievementYear) {
-      alert('Please enter achievement title and year.');
+      alert('Achievement title and year are required.');
       return;
     }
 
-    alert('Achievement added successfully!');
+    try {
+      const response = await fetch('/api/achievements', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: achievementTitle,
+          year: achievementYear,
+          description: achievementDescription,
+          image_url: achievementImage,
+        }),
+      });
 
-    setAchievementTitle('');
-    setAchievementYear('');
-    setAchievementDescription('');
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error || 'Failed to save achievement.');
+        return;
+      }
+
+      setAchievements((current) => [data, ...current]);
+
+      setAchievementTitle('');
+      setAchievementYear('');
+      setAchievementDescription('');
+      setAchievementImage('');
+
+      alert('Achievement saved permanently.');
+    } catch (error) {
+      console.error(error);
+      alert('Failed to save achievement.');
+    }
   }
 
-  function addLegend() {
+  async function addLegend() {
     if (!legendName || !legendPosition) {
-      alert('Please enter legend name and position.');
+      alert('Legend name and position are required.');
       return;
     }
 
-    alert('Legend added successfully!');
+    try {
+      const response = await fetch('/api/legends', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: legendName,
+          position: legendPosition,
+          bio: legendBio,
+          image_url: legendImage,
+        }),
+      });
 
-    setLegendName('');
-    setLegendPosition('');
-    setLegendBio('');
-    setLegendImage('');
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error || 'Failed to save legend.');
+        return;
+      }
+
+      setLegends((current) => [data, ...current]);
+
+      setLegendName('');
+      setLegendPosition('');
+      setLegendBio('');
+      setLegendImage('');
+
+      alert('Legend saved permanently.');
+    } catch (error) {
+      console.error(error);
+      alert('Failed to save legend.');
+    }
+  }
+
+  async function addAnnouncement() {
+    if (!announcementTitle || !announcementMessage) {
+      alert('Announcement title and message are required.');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/announcements', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: announcementTitle,
+          announcement_date:
+            announcementDate ||
+            new Date().toLocaleDateString('en-GB'),
+          announcement_type: announcementType,
+          message: announcementMessage,
+          image_url: announcementImage,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error || 'Failed to publish announcement.');
+        return;
+      }
+
+      setAnnouncements((current) => [data, ...current]);
+
+      setAnnouncementTitle('');
+      setAnnouncementDate('');
+      setAnnouncementType('General');
+      setAnnouncementMessage('');
+      setAnnouncementImage('');
+
+      alert('Announcement published permanently.');
+    } catch (error) {
+      console.error(error);
+      alert('Failed to publish announcement.');
+    }
   }
 
   if (!loggedIn) {
@@ -179,7 +414,10 @@ export default function AdminPage() {
         <div className="admin-box">
           <h1>Abubakar FC</h1>
           <h2>Administrator Login</h2>
-          <p>Sign in to manage the club website.</p>
+
+          <p>
+            Sign in to manage the club website.
+          </p>
 
           <label>Email</label>
 
@@ -199,7 +437,9 @@ export default function AdminPage() {
             placeholder="Password"
           />
 
-          <button onClick={login}>Log in</button>
+          <button onClick={login}>
+            Log in
+          </button>
         </div>
       </main>
     );
@@ -209,21 +449,37 @@ export default function AdminPage() {
     <main className="admin-page">
       <div className="admin-dashboard">
 
-        <h1>Abubakar FC Administrator</h1>
+        <div className="admin-top">
+          <div>
+            <h1>Abubakar FC Administrator</h1>
+            <p>
+              Manage everything from one dashboard.
+            </p>
+          </div>
 
-        <p>
-          Welcome to the club management dashboard.
-        </p>
+          <button
+            onClick={() => {
+              setLoggedIn(false);
+              setEmail('');
+              setPassword('');
+            }}
+          >
+            Log out
+          </button>
+        </div>
+
+        {loading && (
+          <p>
+            Loading club data...
+          </p>
+        )}
 
         {/* FIXTURES */}
 
         <section className="admin-section">
-
           <div className="section-header">
-
             <div>
               <h2>Fixtures</h2>
-
               <p>
                 Manage upcoming Abubakar FC matches.
               </p>
@@ -231,72 +487,60 @@ export default function AdminPage() {
 
             <button
               className="primary"
-              onClick={() =>
-                setShowFixtureForm(!showFixtureForm)
-              }
+              onClick={() => openSection('fixtures')}
             >
-              {showFixtureForm
+              {activeSection === 'fixtures'
                 ? 'Close'
                 : 'Add Fixture'}
             </button>
-
           </div>
 
-          {showFixtureForm && (
+          {activeSection === 'fixtures' && (
             <div className="form-box">
 
               <label>
                 Opponent
-
                 <input
                   value={opponent}
                   onChange={(e) =>
                     setOpponent(e.target.value)
                   }
-                  placeholder="e.g. Mowolowo FC"
+                  placeholder="Mowolowo FC"
                 />
               </label>
 
               <label>
-                Date
-
+                Match Date
                 <input
                   value={date}
                   onChange={(e) =>
                     setDate(e.target.value)
                   }
-                  placeholder="e.g. 25 Aug 2026"
+                  placeholder="25 Aug 2026"
                 />
               </label>
 
               <label>
-                Time
-
+                Match Time
                 <input
                   value={time}
                   onChange={(e) =>
                     setTime(e.target.value)
                   }
-                  placeholder="e.g. 12:00 PM"
+                  placeholder="12:00 PM"
                 />
               </label>
 
               <label>
                 Venue
-
                 <select
                   value={venue}
                   onChange={(e) =>
                     setVenue(e.target.value)
                   }
                 >
-                  <option value="Home">
-                    Home
-                  </option>
-
-                  <option value="Away">
-                    Away
-                  </option>
+                  <option>Home</option>
+                  <option>Away</option>
                 </select>
               </label>
 
@@ -306,48 +550,37 @@ export default function AdminPage() {
               >
                 Save Fixture
               </button>
-
             </div>
           )}
 
-          <div className="fixture-list">
-
+          <div className="admin-records">
             {fixtures.map((fixture) => (
               <div
-                className="fixture-item"
+                className="record"
                 key={fixture.id}
               >
-                <div>
+                <strong>
+                  Abubakar FC vs {fixture.opponent}
+                </strong>
 
-                  <strong>
-                    Abubakar FC vs {fixture.opponent}
-                  </strong>
-
-                  <p>
-                    {fixture.match_date} •{' '}
-                    {fixture.match_time} •{' '}
-                    {fixture.venue}
-                  </p>
-
-                </div>
+                <p>
+                  {fixture.match_date} •{' '}
+                  {fixture.match_time} •{' '}
+                  {fixture.venue}
+                </p>
               </div>
             ))}
-
           </div>
-
         </section>
-
-        {/* ADMIN OPTIONS */}
 
         <div className="admin-grid">
 
           {/* RESULTS */}
 
-          <div>
+          <section className="admin-card">
             <h2>Results</h2>
-
             <p>
-              Update completed matches and scores.
+              Add completed match results and scores.
             </p>
 
             <button
@@ -363,31 +596,26 @@ export default function AdminPage() {
 
                 <label>
                   Opponent
-
                   <input
                     value={resultOpponent}
                     onChange={(e) =>
                       setResultOpponent(e.target.value)
                     }
-                    placeholder="Opponent"
                   />
                 </label>
 
                 <label>
                   Match Date
-
                   <input
                     value={resultDate}
                     onChange={(e) =>
                       setResultDate(e.target.value)
                     }
-                    placeholder="25 Aug 2026"
                   />
                 </label>
 
                 <label>
                   Abubakar FC Score
-
                   <input
                     type="number"
                     min="0"
@@ -400,7 +628,6 @@ export default function AdminPage() {
 
                 <label>
                   Opponent Score
-
                   <input
                     type="number"
                     min="0"
@@ -413,7 +640,6 @@ export default function AdminPage() {
 
                 <label>
                   Venue
-
                   <select
                     value={resultVenue}
                     onChange={(e) =>
@@ -426,14 +652,27 @@ export default function AdminPage() {
                 </label>
 
                 <label>
-                  Notes
+                  Status
+                  <select
+                    value={resultStatus}
+                    onChange={(e) =>
+                      setResultStatus(e.target.value)
+                    }
+                  >
+                    <option>Completed</option>
+                    <option>Won</option>
+                    <option>Draw</option>
+                    <option>Lost</option>
+                  </select>
+                </label>
 
+                <label>
+                  Notes
                   <textarea
                     value={resultNotes}
                     onChange={(e) =>
                       setResultNotes(e.target.value)
                     }
-                    placeholder="Match notes..."
                   />
                 </label>
 
@@ -443,19 +682,16 @@ export default function AdminPage() {
                 >
                   Save Result
                 </button>
-
               </div>
             )}
-          </div>
+          </section>
 
           {/* PLAYERS */}
 
-          <div>
+          <section className="admin-card">
             <h2>Players</h2>
-
             <p>
-              Manage player names, numbers, positions
-              and pictures.
+              Add player profiles and pictures.
             </p>
 
             <button
@@ -463,7 +699,7 @@ export default function AdminPage() {
             >
               {activeSection === 'players'
                 ? 'Close'
-                : 'Manage Players'}
+                : 'Add Player'}
             </button>
 
             {activeSection === 'players' && (
@@ -471,7 +707,6 @@ export default function AdminPage() {
 
                 <label>
                   Player Name
-
                   <input
                     value={playerName}
                     onChange={(e) =>
@@ -483,7 +718,6 @@ export default function AdminPage() {
 
                 <label>
                   Jersey Number
-
                   <input
                     type="number"
                     value={playerNumber}
@@ -496,7 +730,6 @@ export default function AdminPage() {
 
                 <label>
                   Position
-
                   <input
                     value={playerPosition}
                     onChange={(e) =>
@@ -507,16 +740,26 @@ export default function AdminPage() {
                 </label>
 
                 <label>
-                  Player Picture URL
-
+                  Player Picture
                   <input
-                    value={playerImage}
+                    type="file"
+                    accept="image/*"
                     onChange={(e) =>
-                      setPlayerImage(e.target.value)
+                      handleImageUpload(
+                        e.target.files?.[0],
+                        setPlayerImage
+                      )
                     }
-                    placeholder="https://..."
                   />
                 </label>
+
+                {playerImage && (
+                  <img
+                    src={playerImage}
+                    alt="Player preview"
+                    className="image-preview"
+                  />
+                )}
 
                 <button
                   className="primary"
@@ -524,16 +767,14 @@ export default function AdminPage() {
                 >
                   Add Player
                 </button>
-
               </div>
             )}
-          </div>
+          </section>
 
           {/* ACHIEVEMENTS */}
 
-          <div>
+          <section className="admin-card">
             <h2>Achievements</h2>
-
             <p>
               Add trophies, honours and milestones.
             </p>
@@ -545,7 +786,7 @@ export default function AdminPage() {
             >
               {activeSection === 'achievements'
                 ? 'Close'
-                : 'Manage Achievements'}
+                : 'Add Achievement'}
             </button>
 
             {activeSection === 'achievements' && (
@@ -553,23 +794,25 @@ export default function AdminPage() {
 
                 <label>
                   Achievement
-
                   <input
                     value={achievementTitle}
                     onChange={(e) =>
-                      setAchievementTitle(e.target.value)
+                      setAchievementTitle(
+                        e.target.value
+                      )
                     }
-                    placeholder="e.g. League Champions"
+                    placeholder="League Champions"
                   />
                 </label>
 
                 <label>
                   Year
-
                   <input
                     value={achievementYear}
                     onChange={(e) =>
-                      setAchievementYear(e.target.value)
+                      setAchievementYear(
+                        e.target.value
+                      )
                     }
                     placeholder="2026"
                   />
@@ -577,7 +820,6 @@ export default function AdminPage() {
 
                 <label>
                   Description
-
                   <textarea
                     value={achievementDescription}
                     onChange={(e) =>
@@ -585,9 +827,30 @@ export default function AdminPage() {
                         e.target.value
                       )
                     }
-                    placeholder="Achievement details..."
                   />
                 </label>
+
+                <label>
+                  Achievement Picture
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) =>
+                      handleImageUpload(
+                        e.target.files?.[0],
+                        setAchievementImage
+                      )
+                    }
+                  />
+                </label>
+
+                {achievementImage && (
+                  <img
+                    src={achievementImage}
+                    alt="Achievement preview"
+                    className="image-preview"
+                  />
+                )}
 
                 <button
                   className="primary"
@@ -595,16 +858,14 @@ export default function AdminPage() {
                 >
                   Add Achievement
                 </button>
-
               </div>
             )}
-          </div>
+          </section>
 
           {/* LEGENDS */}
 
-          <div>
+          <section className="admin-card">
             <h2>Legends</h2>
-
             <p>
               Manage club legends and their profiles.
             </p>
@@ -614,7 +875,7 @@ export default function AdminPage() {
             >
               {activeSection === 'legends'
                 ? 'Close'
-                : 'Manage Legends'}
+                : 'Add Legend'}
             </button>
 
             {activeSection === 'legends' && (
@@ -622,7 +883,6 @@ export default function AdminPage() {
 
                 <label>
                   Legend Name
-
                   <input
                     value={legendName}
                     onChange={(e) =>
@@ -634,7 +894,6 @@ export default function AdminPage() {
 
                 <label>
                   Position
-
                   <input
                     value={legendPosition}
                     onChange={(e) =>
@@ -646,27 +905,35 @@ export default function AdminPage() {
 
                 <label>
                   Biography
-
                   <textarea
                     value={legendBio}
                     onChange={(e) =>
                       setLegendBio(e.target.value)
                     }
-                    placeholder="Legend biography..."
                   />
                 </label>
 
                 <label>
-                  Legend Picture URL
-
+                  Legend Picture
                   <input
-                    value={legendImage}
+                    type="file"
+                    accept="image/*"
                     onChange={(e) =>
-                      setLegendImage(e.target.value)
+                      handleImageUpload(
+                        e.target.files?.[0],
+                        setLegendImage
+                      )
                     }
-                    placeholder="https://..."
                   />
                 </label>
+
+                {legendImage && (
+                  <img
+                    src={legendImage}
+                    alt="Legend preview"
+                    className="image-preview"
+                  />
+                )}
 
                 <button
                   className="primary"
@@ -674,14 +941,172 @@ export default function AdminPage() {
                 >
                   Add Legend
                 </button>
+              </div>
+            )}
+          </section>
 
+          {/* ANNOUNCEMENTS */}
+
+          <section className="admin-card announcement-card">
+
+            <h2>Announcements</h2>
+
+            <p>
+              Publish club news, important notices
+              and matchday announcements.
+            </p>
+
+            <button
+              onClick={() =>
+                openSection('announcements')
+              }
+            >
+              {activeSection === 'announcements'
+                ? 'Close'
+                : 'Create Announcement'}
+            </button>
+
+            {activeSection === 'announcements' && (
+              <div className="form-box">
+
+                <label>
+                  Announcement Title
+
+                  <input
+                    value={announcementTitle}
+                    onChange={(e) =>
+                      setAnnouncementTitle(
+                        e.target.value
+                      )
+                    }
+                    placeholder="Important Club Announcement"
+                  />
+                </label>
+
+                <label>
+                  Date
+
+                  <input
+                    value={announcementDate}
+                    onChange={(e) =>
+                      setAnnouncementDate(
+                        e.target.value
+                      )
+                    }
+                    placeholder="24 Aug 2026"
+                  />
+                </label>
+
+                <label>
+                  Type
+
+                  <select
+                    value={announcementType}
+                    onChange={(e) =>
+                      setAnnouncementType(
+                        e.target.value
+                      )
+                    }
+                  >
+                    <option>General</option>
+                    <option>Club News</option>
+                    <option>Matchday</option>
+                    <option>Transfer</option>
+                    <option>Important</option>
+                  </select>
+                </label>
+
+                <label>
+                  Announcement Message
+
+                  <textarea
+                    rows="8"
+                    value={announcementMessage}
+                    onChange={(e) =>
+                      setAnnouncementMessage(
+                        e.target.value
+                      )
+                    }
+                    placeholder="Write your announcement here..."
+                  />
+                </label>
+
+                <label>
+                  Announcement Picture
+
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) =>
+                      handleImageUpload(
+                        e.target.files?.[0],
+                        setAnnouncementImage
+                      )
+                    }
+                  />
+                </label>
+
+                {announcementImage && (
+                  <div>
+                    <p>Picture preview:</p>
+
+                    <img
+                      src={announcementImage}
+                      alt="Announcement preview"
+                      className="announcement-preview"
+                    />
+                  </div>
+                )}
+
+                <button
+                  className="primary"
+                  onClick={addAnnouncement}
+                >
+                  Publish Announcement
+                </button>
               </div>
             )}
 
-          </div>
+            <div className="admin-records">
+
+              {announcements.map(
+                (announcement) => (
+                  <div
+                    className="record announcement-record"
+                    key={announcement.id}
+                  >
+
+                    {announcement.image_url && (
+                      <img
+                        src={announcement.image_url}
+                        alt={announcement.title}
+                      />
+                    )}
+
+                    <div>
+                      <strong>
+                        {announcement.title}
+                      </strong>
+
+                      <p>
+                        {announcement.announcement_date}
+                        {' • '}
+                        {announcement.announcement_type}
+                      </p>
+
+                      <p>
+                        {announcement.message}
+                      </p>
+                    </div>
+
+                  </div>
+                )
+              )}
+
+            </div>
+          </section>
 
         </div>
-
       </div>
     </main>
   );
