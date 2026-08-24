@@ -1,21 +1,22 @@
-import { sql } from '../../db';
+const fixtures = [
+  {
+    id: 1,
+    opponent: 'Abubakar fc',
+    match_date: '25 Aug 2026',
+    match_time: '12:00 PM',
+    venue: 'Home',
+  },
+  {
+    id: 2,
+    opponent: 'Dominator fc',
+    match_date: '30 Aug 2026',
+    match_time: '4:00 PM',
+    venue: 'Away',
+  },
+];
 
 export async function GET() {
-  try {
-    const fixtures = await sql`
-      SELECT id, opponent, match_date, match_time, venue
-      FROM fixtures
-      ORDER BY id DESC
-    `;
-
-    return Response.json(fixtures);
-  } catch (error) {
-    console.error(error);
-    return Response.json(
-      { error: 'Failed to load fixtures' },
-      { status: 500 }
-    );
-  }
+  return Response.json(fixtures);
 }
 
 export async function POST(request) {
@@ -31,25 +32,18 @@ export async function POST(request) {
       );
     }
 
-    const result = await sql`
-      INSERT INTO fixtures (
-        opponent,
-        match_date,
-        match_time,
-        venue
-      )
-      VALUES (
-        ${opponent},
-        ${match_date},
-        ${match_time},
-        ${venue}
-      )
-      RETURNING id, opponent, match_date, match_time, venue
-    `;
+    const newFixture = {
+      id: Date.now(),
+      opponent,
+      match_date,
+      match_time,
+      venue,
+    };
 
-    return Response.json(result[0], { status: 201 });
-  } catch (error) {
-    console.error(error);
+    fixtures.unshift(newFixture);
+
+    return Response.json(newFixture, { status: 201 });
+  } catch {
     return Response.json(
       { error: 'Failed to save fixture' },
       { status: 500 }
