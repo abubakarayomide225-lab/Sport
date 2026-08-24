@@ -8,7 +8,7 @@ export default function AdminPage() {
   const [password, setPassword] = useState('');
 
   function login() {
-    if (email === 'admin@abubakarfc.com' && password === 'AbubakarFC2026') {
+    if (email === 'abubakarfc001@gmail.com' && password === 'Abubakar#1') {
       setLoggedIn(true);
     } else {
       alert('Incorrect email or password');
