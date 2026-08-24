@@ -25,6 +25,16 @@ export default function AdminPage() {
   const [photoUrl, setPhotoUrl] = useState('');
   const [bio, setBio] = useState('');
 
+  const [results, setResults] = useState([]);
+  const [showResultForm, setShowResultForm] = useState(false);
+
+  const [resultOpponent, setResultOpponent] = useState('');
+  const [resultDate, setResultDate] = useState('');
+  const [homeScore, setHomeScore] = useState('');
+  const [awayScore, setAwayScore] = useState('');
+  const [resultVenue, setResultVenue] = useState('Home');
+  const [resultNotes, setResultNotes] = useState('');
+
   async function loadFixtures() {
     try {
       const response = await fetch('/api/fixtures');
@@ -51,10 +61,24 @@ export default function AdminPage() {
     }
   }
 
+  async function loadResults() {
+    try {
+      const response = await fetch('/api/results');
+      const data = await response.json();
+
+      if (response.ok) {
+        setResults(data);
+      }
+    } catch (error) {
+      console.error('Failed to load results:', error);
+    }
+  }
+
   useEffect(() => {
     if (loggedIn) {
       loadFixtures();
       loadPlayers();
+      loadResults();
     }
   }, [loggedIn]);
 
@@ -157,13 +181,75 @@ export default function AdminPage() {
     }
   }
 
+  async function addResult() {
+    if (!resultOpponent || !resultDate) {
+      alert('Please enter the opponent and match date.');
+      return;
+    }
+
+    const home = Number(homeScore) || 0;
+    const away = Number(awayScore) || 0;
+
+    let status = 'Draw';
+
+    if (home > away) {
+      status = 'Won';
+    } else if (home < away) {
+      status = 'Lost';
+    }
+
+    try {
+      const response = await fetch('/api/results', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          opponent: resultOpponent,
+          match_date: resultDate,
+          home_score: home,
+          away_score: away,
+          venue: resultVenue,
+          status,
+          notes: resultNotes,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error || 'Failed to save result.');
+        return;
+      }
+
+      setResults((current) => [data, ...current]);
+
+      setResultOpponent('');
+      setResultDate('');
+      setHomeScore('');
+      setAwayScore('');
+      setResultVenue('Home');
+      setResultNotes('');
+      setShowResultForm(false);
+
+      alert('Result saved successfully!');
+    } catch (error) {
+      console.error(error);
+      alert('Could not connect to the results database.');
+    }
+  }
+
   if (!loggedIn) {
     return (
       <main className="admin-page">
         <div className="admin-box">
           <h1>Abubakar FC</h1>
+
           <h2>Administrator Login</h2>
-          <p>Sign in to manage the club website.</p>
+
+          <p>
+            Sign in to manage the club website.
+          </p>
 
           <label>Email</label>
 
@@ -183,7 +269,9 @@ export default function AdminPage() {
             placeholder="Password"
           />
 
-          <button onClick={login}>Log in</button>
+          <button onClick={login}>
+            Log in
+          </button>
         </div>
       </main>
     );
@@ -312,6 +400,165 @@ export default function AdminPage() {
                     {fixture.match_time} •{' '}
                     {fixture.venue}
                   </p>
+
+                </div>
+              </div>
+            ))}
+
+          </div>
+
+        </section>
+
+        {/* RESULTS */}
+
+        <section className="admin-section">
+
+          <div className="section-header">
+
+            <div>
+              <h2>Results</h2>
+
+              <p>
+                Record completed matches and scores.
+              </p>
+            </div>
+
+            <button
+              className="primary"
+              onClick={() =>
+                setShowResultForm(!showResultForm)
+              }
+            >
+              {showResultForm
+                ? 'Close'
+                : 'Add Result'}
+            </button>
+
+          </div>
+
+          {showResultForm && (
+            <div className="form-box">
+
+              <label>
+                Opponent
+
+                <input
+                  value={resultOpponent}
+                  onChange={(e) =>
+                    setResultOpponent(e.target.value)
+                  }
+                  placeholder="e.g. Mowolowo FC"
+                />
+              </label>
+
+              <label>
+                Match Date
+
+                <input
+                  value={resultDate}
+                  onChange={(e) =>
+                    setResultDate(e.target.value)
+                  }
+                  placeholder="e.g. 20 Aug 2026"
+                />
+              </label>
+
+              <label>
+                Abubakar FC Score
+
+                <input
+                  type="number"
+                  min="0"
+                  value={homeScore}
+                  onChange={(e) =>
+                    setHomeScore(e.target.value)
+                  }
+                  placeholder="0"
+                />
+              </label>
+
+              <label>
+                Opponent Score
+
+                <input
+                  type="number"
+                  min="0"
+                  value={awayScore}
+                  onChange={(e) =>
+                    setAwayScore(e.target.value)
+                  }
+                  placeholder="0"
+                />
+              </label>
+
+              <label>
+                Venue
+
+                <select
+                  value={resultVenue}
+                  onChange={(e) =>
+                    setResultVenue(e.target.value)
+                  }
+                >
+                  <option value="Home">
+                    Home
+                  </option>
+
+                  <option value="Away">
+                    Away
+                  </option>
+                </select>
+              </label>
+
+              <label>
+                Notes
+
+                <textarea
+                  value={resultNotes}
+                  onChange={(e) =>
+                    setResultNotes(e.target.value)
+                  }
+                  placeholder="Optional match notes"
+                  rows="4"
+                />
+              </label>
+
+              <button
+                className="primary"
+                onClick={addResult}
+              >
+                Save Result
+              </button>
+
+            </div>
+          )}
+
+          <div className="fixture-list">
+
+            {results.map((result) => (
+              <div
+                className="fixture-item"
+                key={result.id}
+              >
+                <div>
+
+                  <strong>
+                    Abubakar FC {result.home_score} -{' '}
+                    {result.away_score}{' '}
+                    {result.opponent}
+                  </strong>
+
+                  <p>
+                    {result.match_date} •{' '}
+                    {result.venue} •{' '}
+                    {result.status}
+                  </p>
+
+                  {result.notes && (
+                    <small>
+                      {result.notes}
+                    </small>
+                  )}
 
                 </div>
               </div>
@@ -497,23 +744,17 @@ export default function AdminPage() {
 
         </section>
 
-        {/* OTHER ADMIN SECTIONS */}
+        {/* OTHER SECTIONS */}
 
         <div className="admin-grid">
 
           <div>
-            <h2>Results</h2>
-            <p>
-              Update completed matches and scores.
-            </p>
-            <button>Add Result</button>
-          </div>
-
-          <div>
             <h2>Achievements</h2>
+
             <p>
               Add trophies, honours and milestones.
             </p>
+
             <button>
               Manage Achievements
             </button>
@@ -521,9 +762,11 @@ export default function AdminPage() {
 
           <div>
             <h2>Legends</h2>
+
             <p>
-              Manage your club legends and their profiles.
+              Manage your club legends and profiles.
             </p>
+
             <button>
               Manage Legends
             </button>
