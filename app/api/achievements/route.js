@@ -1,4 +1,4 @@
-import { sql } from '../../db';
+import { sql } from '../../../db';
 
 export async function GET() {
   try {
@@ -10,12 +10,12 @@ export async function GET() {
         description,
         image_url
       FROM achievements
-      ORDER BY id DESC
+      ORDER BY year DESC, id DESC
     `;
 
     return Response.json(achievements);
   } catch (error) {
-    console.error(error);
+    console.error('GET ACHIEVEMENTS ERROR:', error);
 
     return Response.json(
       { error: 'Failed to load achievements' },
@@ -35,9 +35,12 @@ export async function POST(request) {
       image_url,
     } = body;
 
-    if (!title) {
+    if (!title || !year) {
       return Response.json(
-        { error: 'Achievement title is required' },
+        {
+          error:
+            'Achievement title and year are required',
+        },
         { status: 400 }
       );
     }
@@ -51,7 +54,7 @@ export async function POST(request) {
       )
       VALUES (
         ${title},
-        ${year || ''},
+        ${year},
         ${description || ''},
         ${image_url || ''}
       )
@@ -67,7 +70,7 @@ export async function POST(request) {
       status: 201,
     });
   } catch (error) {
-    console.error(error);
+    console.error('POST ACHIEVEMENT ERROR:', error);
 
     return Response.json(
       { error: 'Failed to save achievement' },
