@@ -7,6 +7,7 @@ export default function AdminPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
+  // FIXTURES
   const [fixtures, setFixtures] = useState([]);
   const [showFixtureForm, setShowFixtureForm] = useState(false);
 
@@ -15,16 +16,7 @@ export default function AdminPage() {
   const [time, setTime] = useState('');
   const [venue, setVenue] = useState('Home');
 
-  const [players, setPlayers] = useState([]);
-  const [showPlayerForm, setShowPlayerForm] = useState(false);
-
-  const [playerName, setPlayerName] = useState('');
-  const [jerseyNumber, setJerseyNumber] = useState('');
-  const [position, setPosition] = useState('');
-  const [role, setRole] = useState('');
-  const [photoUrl, setPhotoUrl] = useState('');
-  const [bio, setBio] = useState('');
-
+  // RESULTS
   const [results, setResults] = useState([]);
   const [showResultForm, setShowResultForm] = useState(false);
 
@@ -35,12 +27,35 @@ export default function AdminPage() {
   const [resultVenue, setResultVenue] = useState('Home');
   const [resultNotes, setResultNotes] = useState('');
 
+  // PLAYERS
+  const [players, setPlayers] = useState([]);
+  const [showPlayerForm, setShowPlayerForm] = useState(false);
+
+  const [playerName, setPlayerName] = useState('');
+  const [jerseyNumber, setJerseyNumber] = useState('');
+  const [position, setPosition] = useState('');
+  const [role, setRole] = useState('');
+  const [photoUrl, setPhotoUrl] = useState('');
+  const [bio, setBio] = useState('');
+
+  // ACHIEVEMENTS
+  const [achievements, setAchievements] = useState([]);
+  const [showAchievementForm, setShowAchievementForm] =
+    useState(false);
+
+  const [achievementTitle, setAchievementTitle] = useState('');
+  const [achievementYear, setAchievementYear] = useState('');
+  const [achievementDescription, setAchievementDescription] =
+    useState('');
+  const [achievementImage, setAchievementImage] = useState('');
+
+  // LOAD FIXTURES
   async function loadFixtures() {
     try {
       const response = await fetch('/api/fixtures');
       const data = await response.json();
 
-      if (response.ok) {
+      if (response.ok && Array.isArray(data)) {
         setFixtures(data);
       }
     } catch (error) {
@@ -48,25 +63,13 @@ export default function AdminPage() {
     }
   }
 
-  async function loadPlayers() {
-    try {
-      const response = await fetch('/api/players');
-      const data = await response.json();
-
-      if (response.ok) {
-        setPlayers(data);
-      }
-    } catch (error) {
-      console.error('Failed to load players:', error);
-    }
-  }
-
+  // LOAD RESULTS
   async function loadResults() {
     try {
       const response = await fetch('/api/results');
       const data = await response.json();
 
-      if (response.ok) {
+      if (response.ok && Array.isArray(data)) {
         setResults(data);
       }
     } catch (error) {
@@ -74,14 +77,45 @@ export default function AdminPage() {
     }
   }
 
+  // LOAD PLAYERS
+  async function loadPlayers() {
+    try {
+      const response = await fetch('/api/players');
+      const data = await response.json();
+
+      if (response.ok && Array.isArray(data)) {
+        setPlayers(data);
+      }
+    } catch (error) {
+      console.error('Failed to load players:', error);
+    }
+  }
+
+  // LOAD ACHIEVEMENTS
+  async function loadAchievements() {
+    try {
+      const response = await fetch('/api/achievements');
+      const data = await response.json();
+
+      if (response.ok && Array.isArray(data)) {
+        setAchievements(data);
+      }
+    } catch (error) {
+      console.error('Failed to load achievements:', error);
+    }
+  }
+
+  // LOAD EVERYTHING AFTER LOGIN
   useEffect(() => {
     if (loggedIn) {
       loadFixtures();
-      loadPlayers();
       loadResults();
+      loadPlayers();
+      loadAchievements();
     }
   }, [loggedIn]);
 
+  // LOGIN
   function login() {
     if (
       email === 'abubakarfc001@gmail.com' &&
@@ -93,6 +127,7 @@ export default function AdminPage() {
     }
   }
 
+  // ADD FIXTURE
   async function addFixture() {
     if (!opponent || !date || !time) {
       alert('Please fill in opponent, date and time.');
@@ -135,52 +170,7 @@ export default function AdminPage() {
     }
   }
 
-  async function addPlayer() {
-    if (!playerName || !position) {
-      alert('Please enter the player name and position.');
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/players', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: playerName,
-          jersey_number: jerseyNumber,
-          position,
-          role,
-          photo_url: photoUrl,
-          bio,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        alert(data.error || 'Failed to save player.');
-        return;
-      }
-
-      setPlayers((current) => [data, ...current]);
-
-      setPlayerName('');
-      setJerseyNumber('');
-      setPosition('');
-      setRole('');
-      setPhotoUrl('');
-      setBio('');
-      setShowPlayerForm(false);
-
-      alert('Player saved successfully!');
-    } catch (error) {
-      console.error(error);
-      alert('Could not connect to the player database.');
-    }
-  }
-
+  // ADD RESULT
   async function addResult() {
     if (!resultOpponent || !resultDate) {
       alert('Please enter the opponent and match date.');
@@ -239,6 +229,101 @@ export default function AdminPage() {
     }
   }
 
+  // ADD PLAYER
+  async function addPlayer() {
+    if (!playerName || !position) {
+      alert('Please enter the player name and position.');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/players', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: playerName,
+          jersey_number: jerseyNumber,
+          position,
+          role,
+          photo_url: photoUrl,
+          bio,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error || 'Failed to save player.');
+        return;
+      }
+
+      setPlayers((current) => [data, ...current]);
+
+      setPlayerName('');
+      setJerseyNumber('');
+      setPosition('');
+      setRole('');
+      setPhotoUrl('');
+      setBio('');
+      setShowPlayerForm(false);
+
+      alert('Player saved successfully!');
+    } catch (error) {
+      console.error(error);
+      alert('Could not connect to the player database.');
+    }
+  }
+
+  // ADD ACHIEVEMENT
+  async function addAchievement() {
+    if (!achievementTitle) {
+      alert('Please enter an achievement title.');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/achievements', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: achievementTitle,
+          year: achievementYear,
+          description: achievementDescription,
+          image_url: achievementImage,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(
+          data.error || 'Failed to save achievement.'
+        );
+        return;
+      }
+
+      setAchievements((current) => [data, ...current]);
+
+      setAchievementTitle('');
+      setAchievementYear('');
+      setAchievementDescription('');
+      setAchievementImage('');
+      setShowAchievementForm(false);
+
+      alert('Achievement saved successfully!');
+    } catch (error) {
+      console.error(error);
+      alert(
+        'Could not connect to the achievements database.'
+      );
+    }
+  }
+
+  // LOGIN SCREEN
   if (!loggedIn) {
     return (
       <main className="admin-page">
@@ -277,6 +362,7 @@ export default function AdminPage() {
     );
   }
 
+  // ADMIN DASHBOARD
   return (
     <main className="admin-page">
       <div className="admin-dashboard">
@@ -304,7 +390,9 @@ export default function AdminPage() {
             <button
               className="primary"
               onClick={() =>
-                setShowFixtureForm(!showFixtureForm)
+                setShowFixtureForm(
+                  !showFixtureForm
+                )
               }
             >
               {showFixtureForm
@@ -392,7 +480,8 @@ export default function AdminPage() {
                 <div>
 
                   <strong>
-                    Abubakar FC vs {fixture.opponent}
+                    Abubakar FC vs{' '}
+                    {fixture.opponent}
                   </strong>
 
                   <p>
@@ -426,7 +515,9 @@ export default function AdminPage() {
             <button
               className="primary"
               onClick={() =>
-                setShowResultForm(!showResultForm)
+                setShowResultForm(
+                  !showResultForm
+                )
               }
             >
               {showResultForm
@@ -445,7 +536,9 @@ export default function AdminPage() {
                 <input
                   value={resultOpponent}
                   onChange={(e) =>
-                    setResultOpponent(e.target.value)
+                    setResultOpponent(
+                      e.target.value
+                    )
                   }
                   placeholder="e.g. Mowolowo FC"
                 />
@@ -457,7 +550,9 @@ export default function AdminPage() {
                 <input
                   value={resultDate}
                   onChange={(e) =>
-                    setResultDate(e.target.value)
+                    setResultDate(
+                      e.target.value
+                    )
                   }
                   placeholder="e.g. 20 Aug 2026"
                 />
@@ -471,7 +566,9 @@ export default function AdminPage() {
                   min="0"
                   value={homeScore}
                   onChange={(e) =>
-                    setHomeScore(e.target.value)
+                    setHomeScore(
+                      e.target.value
+                    )
                   }
                   placeholder="0"
                 />
@@ -485,7 +582,9 @@ export default function AdminPage() {
                   min="0"
                   value={awayScore}
                   onChange={(e) =>
-                    setAwayScore(e.target.value)
+                    setAwayScore(
+                      e.target.value
+                    )
                   }
                   placeholder="0"
                 />
@@ -497,7 +596,9 @@ export default function AdminPage() {
                 <select
                   value={resultVenue}
                   onChange={(e) =>
-                    setResultVenue(e.target.value)
+                    setResultVenue(
+                      e.target.value
+                    )
                   }
                 >
                   <option value="Home">
@@ -516,7 +617,9 @@ export default function AdminPage() {
                 <textarea
                   value={resultNotes}
                   onChange={(e) =>
-                    setResultNotes(e.target.value)
+                    setResultNotes(
+                      e.target.value
+                    )
                   }
                   placeholder="Optional match notes"
                   rows="4"
@@ -543,7 +646,8 @@ export default function AdminPage() {
                 <div>
 
                   <strong>
-                    Abubakar FC {result.home_score} -{' '}
+                    Abubakar FC{' '}
+                    {result.home_score} -{' '}
                     {result.away_score}{' '}
                     {result.opponent}
                   </strong>
@@ -585,7 +689,9 @@ export default function AdminPage() {
             <button
               className="primary"
               onClick={() =>
-                setShowPlayerForm(!showPlayerForm)
+                setShowPlayerForm(
+                  !showPlayerForm
+                )
               }
             >
               {showPlayerForm
@@ -604,7 +710,9 @@ export default function AdminPage() {
                 <input
                   value={playerName}
                   onChange={(e) =>
-                    setPlayerName(e.target.value)
+                    setPlayerName(
+                      e.target.value
+                    )
                   }
                   placeholder="e.g. Abubakar"
                 />
@@ -616,7 +724,9 @@ export default function AdminPage() {
                 <input
                   value={jerseyNumber}
                   onChange={(e) =>
-                    setJerseyNumber(e.target.value)
+                    setJerseyNumber(
+                      e.target.value
+                    )
                   }
                   placeholder="e.g. 15"
                 />
@@ -628,7 +738,9 @@ export default function AdminPage() {
                 <select
                   value={position}
                   onChange={(e) =>
-                    setPosition(e.target.value)
+                    setPosition(
+                      e.target.value
+                    )
                   }
                 >
                   <option value="">
@@ -671,7 +783,9 @@ export default function AdminPage() {
                 <input
                   value={photoUrl}
                   onChange={(e) =>
-                    setPhotoUrl(e.target.value)
+                    setPhotoUrl(
+                      e.target.value
+                    )
                   }
                   placeholder="Paste image URL"
                 />
@@ -744,35 +858,171 @@ export default function AdminPage() {
 
         </section>
 
-        {/* OTHER SECTIONS */}
+        {/* ACHIEVEMENTS */}
 
-        <div className="admin-grid">
+        <section className="admin-section">
 
-          <div>
-            <h2>Achievements</h2>
+          <div className="section-header">
 
-            <p>
-              Add trophies, honours and milestones.
-            </p>
+            <div>
+              <h2>Achievements</h2>
 
-            <button>
-              Manage Achievements
+              <p>
+                Add trophies, honours and milestones.
+              </p>
+            </div>
+
+            <button
+              className="primary"
+              onClick={() =>
+                setShowAchievementForm(
+                  !showAchievementForm
+                )
+              }
+            >
+              {showAchievementForm
+                ? 'Close'
+                : 'Add Achievement'}
             </button>
+
           </div>
 
-          <div>
-            <h2>Legends</h2>
+          {showAchievementForm && (
+            <div className="form-box">
 
-            <p>
-              Manage your club legends and profiles.
-            </p>
+              <label>
+                Achievement Title
 
-            <button>
+                <input
+                  value={achievementTitle}
+                  onChange={(e) =>
+                    setAchievementTitle(
+                      e.target.value
+                    )
+                  }
+                  placeholder="e.g. League Champions"
+                />
+              </label>
+
+              <label>
+                Year
+
+                <input
+                  value={achievementYear}
+                  onChange={(e) =>
+                    setAchievementYear(
+                      e.target.value
+                    )
+                  }
+                  placeholder="e.g. 2026"
+                />
+              </label>
+
+              <label>
+                Description
+
+                <textarea
+                  value={achievementDescription}
+                  onChange={(e) =>
+                    setAchievementDescription(
+                      e.target.value
+                    )
+                  }
+                  placeholder="Describe the achievement..."
+                  rows="5"
+                />
+              </label>
+
+              <label>
+                Achievement Image URL
+
+                <input
+                  value={achievementImage}
+                  onChange={(e) =>
+                    setAchievementImage(
+                      e.target.value
+                    )
+                  }
+                  placeholder="Paste image URL"
+                />
+              </label>
+
+              <button
+                className="primary"
+                onClick={addAchievement}
+              >
+                Save Achievement
+              </button>
+
+            </div>
+          )}
+
+          <div className="fixture-list">
+
+            {achievements.map((achievement) => (
+              <div
+                className="fixture-item"
+                key={achievement.id}
+              >
+                <div>
+
+                  <strong>
+                    {achievement.title}
+                  </strong>
+
+                  <p>
+                    {achievement.year}
+                  </p>
+
+                  {achievement.description && (
+                    <p>
+                      {achievement.description}
+                    </p>
+                  )}
+
+                  {achievement.image_url && (
+                    <img
+                      src={achievement.image_url}
+                      alt={achievement.title}
+                      style={{
+                        width: '100px',
+                        height: '70px',
+                        objectFit: 'cover',
+                        borderRadius: '10px',
+                        marginTop: '10px',
+                      }}
+                    />
+                  )}
+
+                </div>
+              </div>
+            ))}
+
+          </div>
+
+        </section>
+
+        {/* LEGENDS */}
+
+        <section className="admin-section">
+
+          <div className="section-header">
+
+            <div>
+              <h2>Legends</h2>
+
+              <p>
+                Manage your club legends and profiles.
+              </p>
+            </div>
+
+            <button className="primary">
               Manage Legends
             </button>
+
           </div>
 
-        </div>
+        </section>
 
       </div>
     </main>
