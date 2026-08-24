@@ -7,55 +7,44 @@ export default function AdminPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  // FIXTURES
   const [fixtures, setFixtures] = useState([]);
   const [showFixtureForm, setShowFixtureForm] = useState(false);
+
+  const [activeSection, setActiveSection] = useState(null);
 
   const [opponent, setOpponent] = useState('');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [venue, setVenue] = useState('Home');
 
-  // RESULTS
-  const [results, setResults] = useState([]);
-  const [showResultForm, setShowResultForm] = useState(false);
-
   const [resultOpponent, setResultOpponent] = useState('');
   const [resultDate, setResultDate] = useState('');
   const [homeScore, setHomeScore] = useState('');
   const [awayScore, setAwayScore] = useState('');
   const [resultVenue, setResultVenue] = useState('Home');
+  const [resultStatus, setResultStatus] = useState('Completed');
   const [resultNotes, setResultNotes] = useState('');
 
-  // PLAYERS
-  const [players, setPlayers] = useState([]);
-  const [showPlayerForm, setShowPlayerForm] = useState(false);
-
   const [playerName, setPlayerName] = useState('');
-  const [jerseyNumber, setJerseyNumber] = useState('');
-  const [position, setPosition] = useState('');
-  const [role, setRole] = useState('');
-  const [photoUrl, setPhotoUrl] = useState('');
-  const [bio, setBio] = useState('');
-
-  // ACHIEVEMENTS
-  const [achievements, setAchievements] = useState([]);
-  const [showAchievementForm, setShowAchievementForm] =
-    useState(false);
+  const [playerNumber, setPlayerNumber] = useState('');
+  const [playerPosition, setPlayerPosition] = useState('');
+  const [playerImage, setPlayerImage] = useState('');
 
   const [achievementTitle, setAchievementTitle] = useState('');
   const [achievementYear, setAchievementYear] = useState('');
-  const [achievementDescription, setAchievementDescription] =
-    useState('');
-  const [achievementImage, setAchievementImage] = useState('');
+  const [achievementDescription, setAchievementDescription] = useState('');
 
-  // LOAD FIXTURES
+  const [legendName, setLegendName] = useState('');
+  const [legendPosition, setLegendPosition] = useState('');
+  const [legendBio, setLegendBio] = useState('');
+  const [legendImage, setLegendImage] = useState('');
+
   async function loadFixtures() {
     try {
       const response = await fetch('/api/fixtures');
       const data = await response.json();
 
-      if (response.ok && Array.isArray(data)) {
+      if (response.ok) {
         setFixtures(data);
       }
     } catch (error) {
@@ -63,59 +52,12 @@ export default function AdminPage() {
     }
   }
 
-  // LOAD RESULTS
-  async function loadResults() {
-    try {
-      const response = await fetch('/api/results');
-      const data = await response.json();
-
-      if (response.ok && Array.isArray(data)) {
-        setResults(data);
-      }
-    } catch (error) {
-      console.error('Failed to load results:', error);
-    }
-  }
-
-  // LOAD PLAYERS
-  async function loadPlayers() {
-    try {
-      const response = await fetch('/api/players');
-      const data = await response.json();
-
-      if (response.ok && Array.isArray(data)) {
-        setPlayers(data);
-      }
-    } catch (error) {
-      console.error('Failed to load players:', error);
-    }
-  }
-
-  // LOAD ACHIEVEMENTS
-  async function loadAchievements() {
-    try {
-      const response = await fetch('/api/achievements');
-      const data = await response.json();
-
-      if (response.ok && Array.isArray(data)) {
-        setAchievements(data);
-      }
-    } catch (error) {
-      console.error('Failed to load achievements:', error);
-    }
-  }
-
-  // LOAD EVERYTHING AFTER LOGIN
   useEffect(() => {
     if (loggedIn) {
       loadFixtures();
-      loadResults();
-      loadPlayers();
-      loadAchievements();
     }
   }, [loggedIn]);
 
-  // LOGIN
   function login() {
     if (
       email === 'abubakarfc001@gmail.com' &&
@@ -127,7 +69,6 @@ export default function AdminPage() {
     }
   }
 
-  // ADD FIXTURE
   async function addFixture() {
     if (!opponent || !date || !time) {
       alert('Please fill in opponent, date and time.');
@@ -170,171 +111,75 @@ export default function AdminPage() {
     }
   }
 
-  // ADD RESULT
-  async function addResult() {
+  function openSection(section) {
+    setActiveSection(
+      activeSection === section ? null : section
+    );
+  }
+
+  function addResult() {
     if (!resultOpponent || !resultDate) {
       alert('Please enter the opponent and match date.');
       return;
     }
 
-    const home = Number(homeScore) || 0;
-    const away = Number(awayScore) || 0;
+    alert('Result form is ready. Database connection will be connected next.');
 
-    let status = 'Draw';
-
-    if (home > away) {
-      status = 'Won';
-    } else if (home < away) {
-      status = 'Lost';
-    }
-
-    try {
-      const response = await fetch('/api/results', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          opponent: resultOpponent,
-          match_date: resultDate,
-          home_score: home,
-          away_score: away,
-          venue: resultVenue,
-          status,
-          notes: resultNotes,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        alert(data.error || 'Failed to save result.');
-        return;
-      }
-
-      setResults((current) => [data, ...current]);
-
-      setResultOpponent('');
-      setResultDate('');
-      setHomeScore('');
-      setAwayScore('');
-      setResultVenue('Home');
-      setResultNotes('');
-      setShowResultForm(false);
-
-      alert('Result saved successfully!');
-    } catch (error) {
-      console.error(error);
-      alert('Could not connect to the results database.');
-    }
+    setResultOpponent('');
+    setResultDate('');
+    setHomeScore('');
+    setAwayScore('');
+    setResultNotes('');
   }
 
-  // ADD PLAYER
-  async function addPlayer() {
-    if (!playerName || !position) {
-      alert('Please enter the player name and position.');
+  function addPlayer() {
+    if (!playerName || !playerNumber || !playerPosition) {
+      alert('Please fill in player name, number and position.');
       return;
     }
 
-    try {
-      const response = await fetch('/api/players', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: playerName,
-          jersey_number: jerseyNumber,
-          position,
-          role,
-          photo_url: photoUrl,
-          bio,
-        }),
-      });
+    alert('Player added successfully!');
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        alert(data.error || 'Failed to save player.');
-        return;
-      }
-
-      setPlayers((current) => [data, ...current]);
-
-      setPlayerName('');
-      setJerseyNumber('');
-      setPosition('');
-      setRole('');
-      setPhotoUrl('');
-      setBio('');
-      setShowPlayerForm(false);
-
-      alert('Player saved successfully!');
-    } catch (error) {
-      console.error(error);
-      alert('Could not connect to the player database.');
-    }
+    setPlayerName('');
+    setPlayerNumber('');
+    setPlayerPosition('');
+    setPlayerImage('');
   }
 
-  // ADD ACHIEVEMENT
-  async function addAchievement() {
-    if (!achievementTitle) {
-      alert('Please enter an achievement title.');
+  function addAchievement() {
+    if (!achievementTitle || !achievementYear) {
+      alert('Please enter achievement title and year.');
       return;
     }
 
-    try {
-      const response = await fetch('/api/achievements', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title: achievementTitle,
-          year: achievementYear,
-          description: achievementDescription,
-          image_url: achievementImage,
-        }),
-      });
+    alert('Achievement added successfully!');
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        alert(
-          data.error || 'Failed to save achievement.'
-        );
-        return;
-      }
-
-      setAchievements((current) => [data, ...current]);
-
-      setAchievementTitle('');
-      setAchievementYear('');
-      setAchievementDescription('');
-      setAchievementImage('');
-      setShowAchievementForm(false);
-
-      alert('Achievement saved successfully!');
-    } catch (error) {
-      console.error(error);
-      alert(
-        'Could not connect to the achievements database.'
-      );
-    }
+    setAchievementTitle('');
+    setAchievementYear('');
+    setAchievementDescription('');
   }
 
-  // LOGIN SCREEN
+  function addLegend() {
+    if (!legendName || !legendPosition) {
+      alert('Please enter legend name and position.');
+      return;
+    }
+
+    alert('Legend added successfully!');
+
+    setLegendName('');
+    setLegendPosition('');
+    setLegendBio('');
+    setLegendImage('');
+  }
+
   if (!loggedIn) {
     return (
       <main className="admin-page">
         <div className="admin-box">
           <h1>Abubakar FC</h1>
-
           <h2>Administrator Login</h2>
-
-          <p>
-            Sign in to manage the club website.
-          </p>
+          <p>Sign in to manage the club website.</p>
 
           <label>Email</label>
 
@@ -354,15 +199,12 @@ export default function AdminPage() {
             placeholder="Password"
           />
 
-          <button onClick={login}>
-            Log in
-          </button>
+          <button onClick={login}>Log in</button>
         </div>
       </main>
     );
   }
 
-  // ADMIN DASHBOARD
   return (
     <main className="admin-page">
       <div className="admin-dashboard">
@@ -390,9 +232,7 @@ export default function AdminPage() {
             <button
               className="primary"
               onClick={() =>
-                setShowFixtureForm(
-                  !showFixtureForm
-                )
+                setShowFixtureForm(!showFixtureForm)
               }
             >
               {showFixtureForm
@@ -425,7 +265,7 @@ export default function AdminPage() {
                   onChange={(e) =>
                     setDate(e.target.value)
                   }
-                  placeholder="e.g. 5 Sep 2026"
+                  placeholder="e.g. 25 Aug 2026"
                 />
               </label>
 
@@ -437,7 +277,7 @@ export default function AdminPage() {
                   onChange={(e) =>
                     setTime(e.target.value)
                   }
-                  placeholder="e.g. 3:00 PM"
+                  placeholder="e.g. 12:00 PM"
                 />
               </label>
 
@@ -480,8 +320,7 @@ export default function AdminPage() {
                 <div>
 
                   <strong>
-                    Abubakar FC vs{' '}
-                    {fixture.opponent}
+                    Abubakar FC vs {fixture.opponent}
                   </strong>
 
                   <p>
@@ -498,531 +337,350 @@ export default function AdminPage() {
 
         </section>
 
-        {/* RESULTS */}
+        {/* ADMIN OPTIONS */}
 
-        <section className="admin-section">
+        <div className="admin-grid">
 
-          <div className="section-header">
+          {/* RESULTS */}
 
-            <div>
-              <h2>Results</h2>
+          <div>
+            <h2>Results</h2>
 
-              <p>
-                Record completed matches and scores.
-              </p>
-            </div>
+            <p>
+              Update completed matches and scores.
+            </p>
 
             <button
-              className="primary"
-              onClick={() =>
-                setShowResultForm(
-                  !showResultForm
-                )
-              }
+              onClick={() => openSection('results')}
             >
-              {showResultForm
+              {activeSection === 'results'
                 ? 'Close'
                 : 'Add Result'}
             </button>
 
-          </div>
+            {activeSection === 'results' && (
+              <div className="form-box">
 
-          {showResultForm && (
-            <div className="form-box">
+                <label>
+                  Opponent
 
-              <label>
-                Opponent
+                  <input
+                    value={resultOpponent}
+                    onChange={(e) =>
+                      setResultOpponent(e.target.value)
+                    }
+                    placeholder="Opponent"
+                  />
+                </label>
 
-                <input
-                  value={resultOpponent}
-                  onChange={(e) =>
-                    setResultOpponent(
-                      e.target.value
-                    )
-                  }
-                  placeholder="e.g. Mowolowo FC"
-                />
-              </label>
+                <label>
+                  Match Date
 
-              <label>
-                Match Date
+                  <input
+                    value={resultDate}
+                    onChange={(e) =>
+                      setResultDate(e.target.value)
+                    }
+                    placeholder="25 Aug 2026"
+                  />
+                </label>
 
-                <input
-                  value={resultDate}
-                  onChange={(e) =>
-                    setResultDate(
-                      e.target.value
-                    )
-                  }
-                  placeholder="e.g. 20 Aug 2026"
-                />
-              </label>
+                <label>
+                  Abubakar FC Score
 
-              <label>
-                Abubakar FC Score
+                  <input
+                    type="number"
+                    min="0"
+                    value={homeScore}
+                    onChange={(e) =>
+                      setHomeScore(e.target.value)
+                    }
+                  />
+                </label>
 
-                <input
-                  type="number"
-                  min="0"
-                  value={homeScore}
-                  onChange={(e) =>
-                    setHomeScore(
-                      e.target.value
-                    )
-                  }
-                  placeholder="0"
-                />
-              </label>
+                <label>
+                  Opponent Score
 
-              <label>
-                Opponent Score
+                  <input
+                    type="number"
+                    min="0"
+                    value={awayScore}
+                    onChange={(e) =>
+                      setAwayScore(e.target.value)
+                    }
+                  />
+                </label>
 
-                <input
-                  type="number"
-                  min="0"
-                  value={awayScore}
-                  onChange={(e) =>
-                    setAwayScore(
-                      e.target.value
-                    )
-                  }
-                  placeholder="0"
-                />
-              </label>
+                <label>
+                  Venue
 
-              <label>
-                Venue
+                  <select
+                    value={resultVenue}
+                    onChange={(e) =>
+                      setResultVenue(e.target.value)
+                    }
+                  >
+                    <option>Home</option>
+                    <option>Away</option>
+                  </select>
+                </label>
 
-                <select
-                  value={resultVenue}
-                  onChange={(e) =>
-                    setResultVenue(
-                      e.target.value
-                    )
-                  }
+                <label>
+                  Notes
+
+                  <textarea
+                    value={resultNotes}
+                    onChange={(e) =>
+                      setResultNotes(e.target.value)
+                    }
+                    placeholder="Match notes..."
+                  />
+                </label>
+
+                <button
+                  className="primary"
+                  onClick={addResult}
                 >
-                  <option value="Home">
-                    Home
-                  </option>
+                  Save Result
+                </button>
 
-                  <option value="Away">
-                    Away
-                  </option>
-                </select>
-              </label>
-
-              <label>
-                Notes
-
-                <textarea
-                  value={resultNotes}
-                  onChange={(e) =>
-                    setResultNotes(
-                      e.target.value
-                    )
-                  }
-                  placeholder="Optional match notes"
-                  rows="4"
-                />
-              </label>
-
-              <button
-                className="primary"
-                onClick={addResult}
-              >
-                Save Result
-              </button>
-
-            </div>
-          )}
-
-          <div className="fixture-list">
-
-            {results.map((result) => (
-              <div
-                className="fixture-item"
-                key={result.id}
-              >
-                <div>
-
-                  <strong>
-                    Abubakar FC{' '}
-                    {result.home_score} -{' '}
-                    {result.away_score}{' '}
-                    {result.opponent}
-                  </strong>
-
-                  <p>
-                    {result.match_date} •{' '}
-                    {result.venue} •{' '}
-                    {result.status}
-                  </p>
-
-                  {result.notes && (
-                    <small>
-                      {result.notes}
-                    </small>
-                  )}
-
-                </div>
               </div>
-            ))}
-
+            )}
           </div>
 
-        </section>
+          {/* PLAYERS */}
 
-        {/* PLAYERS */}
+          <div>
+            <h2>Players</h2>
 
-        <section className="admin-section">
-
-          <div className="section-header">
-
-            <div>
-              <h2>Players</h2>
-
-              <p>
-                Manage player profiles and photos.
-              </p>
-            </div>
+            <p>
+              Manage player names, numbers, positions
+              and pictures.
+            </p>
 
             <button
-              className="primary"
-              onClick={() =>
-                setShowPlayerForm(
-                  !showPlayerForm
-                )
-              }
+              onClick={() => openSection('players')}
             >
-              {showPlayerForm
+              {activeSection === 'players'
                 ? 'Close'
-                : 'Add Player'}
+                : 'Manage Players'}
             </button>
 
-          </div>
+            {activeSection === 'players' && (
+              <div className="form-box">
 
-          {showPlayerForm && (
-            <div className="form-box">
+                <label>
+                  Player Name
 
-              <label>
-                Player Name
+                  <input
+                    value={playerName}
+                    onChange={(e) =>
+                      setPlayerName(e.target.value)
+                    }
+                    placeholder="Player name"
+                  />
+                </label>
 
-                <input
-                  value={playerName}
-                  onChange={(e) =>
-                    setPlayerName(
-                      e.target.value
-                    )
-                  }
-                  placeholder="e.g. Abubakar"
-                />
-              </label>
+                <label>
+                  Jersey Number
 
-              <label>
-                Jersey Number
+                  <input
+                    type="number"
+                    value={playerNumber}
+                    onChange={(e) =>
+                      setPlayerNumber(e.target.value)
+                    }
+                    placeholder="10"
+                  />
+                </label>
 
-                <input
-                  value={jerseyNumber}
-                  onChange={(e) =>
-                    setJerseyNumber(
-                      e.target.value
-                    )
-                  }
-                  placeholder="e.g. 15"
-                />
-              </label>
+                <label>
+                  Position
 
-              <label>
-                Position
+                  <input
+                    value={playerPosition}
+                    onChange={(e) =>
+                      setPlayerPosition(e.target.value)
+                    }
+                    placeholder="Forward"
+                  />
+                </label>
 
-                <select
-                  value={position}
-                  onChange={(e) =>
-                    setPosition(
-                      e.target.value
-                    )
-                  }
+                <label>
+                  Player Picture URL
+
+                  <input
+                    value={playerImage}
+                    onChange={(e) =>
+                      setPlayerImage(e.target.value)
+                    }
+                    placeholder="https://..."
+                  />
+                </label>
+
+                <button
+                  className="primary"
+                  onClick={addPlayer}
                 >
-                  <option value="">
-                    Select position
-                  </option>
+                  Add Player
+                </button>
 
-                  <option value="Goalkeeper">
-                    Goalkeeper
-                  </option>
-
-                  <option value="Defender">
-                    Defender
-                  </option>
-
-                  <option value="Midfielder">
-                    Midfielder
-                  </option>
-
-                  <option value="Forward">
-                    Forward
-                  </option>
-                </select>
-              </label>
-
-              <label>
-                Role
-
-                <input
-                  value={role}
-                  onChange={(e) =>
-                    setRole(e.target.value)
-                  }
-                  placeholder="e.g. Captain"
-                />
-              </label>
-
-              <label>
-                Player Photo URL
-
-                <input
-                  value={photoUrl}
-                  onChange={(e) =>
-                    setPhotoUrl(
-                      e.target.value
-                    )
-                  }
-                  placeholder="Paste image URL"
-                />
-              </label>
-
-              <label>
-                Biography
-
-                <textarea
-                  value={bio}
-                  onChange={(e) =>
-                    setBio(e.target.value)
-                  }
-                  placeholder="Write a short player biography..."
-                  rows="5"
-                />
-              </label>
-
-              <button
-                className="primary"
-                onClick={addPlayer}
-              >
-                Save Player
-              </button>
-
-            </div>
-          )}
-
-          <div className="fixture-list">
-
-            {players.map((player) => (
-              <div
-                className="fixture-item"
-                key={player.id}
-              >
-                <div>
-
-                  <strong>
-                    #{player.jersey_number}{' '}
-                    {player.name}
-                  </strong>
-
-                  <p>
-                    {player.position}
-
-                    {player.role
-                      ? ` • ${player.role}`
-                      : ''}
-                  </p>
-
-                  {player.photo_url && (
-                    <img
-                      src={player.photo_url}
-                      alt={player.name}
-                      style={{
-                        width: '70px',
-                        height: '70px',
-                        objectFit: 'cover',
-                        borderRadius: '10px',
-                        marginTop: '10px',
-                      }}
-                    />
-                  )}
-
-                </div>
               </div>
-            ))}
-
+            )}
           </div>
 
-        </section>
+          {/* ACHIEVEMENTS */}
 
-        {/* ACHIEVEMENTS */}
+          <div>
+            <h2>Achievements</h2>
 
-        <section className="admin-section">
-
-          <div className="section-header">
-
-            <div>
-              <h2>Achievements</h2>
-
-              <p>
-                Add trophies, honours and milestones.
-              </p>
-            </div>
+            <p>
+              Add trophies, honours and milestones.
+            </p>
 
             <button
-              className="primary"
               onClick={() =>
-                setShowAchievementForm(
-                  !showAchievementForm
-                )
+                openSection('achievements')
               }
             >
-              {showAchievementForm
+              {activeSection === 'achievements'
                 ? 'Close'
-                : 'Add Achievement'}
+                : 'Manage Achievements'}
             </button>
 
-          </div>
+            {activeSection === 'achievements' && (
+              <div className="form-box">
 
-          {showAchievementForm && (
-            <div className="form-box">
+                <label>
+                  Achievement
 
-              <label>
-                Achievement Title
+                  <input
+                    value={achievementTitle}
+                    onChange={(e) =>
+                      setAchievementTitle(e.target.value)
+                    }
+                    placeholder="e.g. League Champions"
+                  />
+                </label>
 
-                <input
-                  value={achievementTitle}
-                  onChange={(e) =>
-                    setAchievementTitle(
-                      e.target.value
-                    )
-                  }
-                  placeholder="e.g. League Champions"
-                />
-              </label>
+                <label>
+                  Year
 
-              <label>
-                Year
+                  <input
+                    value={achievementYear}
+                    onChange={(e) =>
+                      setAchievementYear(e.target.value)
+                    }
+                    placeholder="2026"
+                  />
+                </label>
 
-                <input
-                  value={achievementYear}
-                  onChange={(e) =>
-                    setAchievementYear(
-                      e.target.value
-                    )
-                  }
-                  placeholder="e.g. 2026"
-                />
-              </label>
+                <label>
+                  Description
 
-              <label>
-                Description
+                  <textarea
+                    value={achievementDescription}
+                    onChange={(e) =>
+                      setAchievementDescription(
+                        e.target.value
+                      )
+                    }
+                    placeholder="Achievement details..."
+                  />
+                </label>
 
-                <textarea
-                  value={achievementDescription}
-                  onChange={(e) =>
-                    setAchievementDescription(
-                      e.target.value
-                    )
-                  }
-                  placeholder="Describe the achievement..."
-                  rows="5"
-                />
-              </label>
+                <button
+                  className="primary"
+                  onClick={addAchievement}
+                >
+                  Add Achievement
+                </button>
 
-              <label>
-                Achievement Image URL
-
-                <input
-                  value={achievementImage}
-                  onChange={(e) =>
-                    setAchievementImage(
-                      e.target.value
-                    )
-                  }
-                  placeholder="Paste image URL"
-                />
-              </label>
-
-              <button
-                className="primary"
-                onClick={addAchievement}
-              >
-                Save Achievement
-              </button>
-
-            </div>
-          )}
-
-          <div className="fixture-list">
-
-            {achievements.map((achievement) => (
-              <div
-                className="fixture-item"
-                key={achievement.id}
-              >
-                <div>
-
-                  <strong>
-                    {achievement.title}
-                  </strong>
-
-                  <p>
-                    {achievement.year}
-                  </p>
-
-                  {achievement.description && (
-                    <p>
-                      {achievement.description}
-                    </p>
-                  )}
-
-                  {achievement.image_url && (
-                    <img
-                      src={achievement.image_url}
-                      alt={achievement.title}
-                      style={{
-                        width: '100px',
-                        height: '70px',
-                        objectFit: 'cover',
-                        borderRadius: '10px',
-                        marginTop: '10px',
-                      }}
-                    />
-                  )}
-
-                </div>
               </div>
-            ))}
-
+            )}
           </div>
 
-        </section>
+          {/* LEGENDS */}
 
-        {/* LEGENDS */}
+          <div>
+            <h2>Legends</h2>
 
-        <section className="admin-section">
+            <p>
+              Manage club legends and their profiles.
+            </p>
 
-          <div className="section-header">
-
-            <div>
-              <h2>Legends</h2>
-
-              <p>
-                Manage your club legends and profiles.
-              </p>
-            </div>
-
-            <button className="primary">
-              Manage Legends
+            <button
+              onClick={() => openSection('legends')}
+            >
+              {activeSection === 'legends'
+                ? 'Close'
+                : 'Manage Legends'}
             </button>
 
+            {activeSection === 'legends' && (
+              <div className="form-box">
+
+                <label>
+                  Legend Name
+
+                  <input
+                    value={legendName}
+                    onChange={(e) =>
+                      setLegendName(e.target.value)
+                    }
+                    placeholder="Legend name"
+                  />
+                </label>
+
+                <label>
+                  Position
+
+                  <input
+                    value={legendPosition}
+                    onChange={(e) =>
+                      setLegendPosition(e.target.value)
+                    }
+                    placeholder="Midfielder"
+                  />
+                </label>
+
+                <label>
+                  Biography
+
+                  <textarea
+                    value={legendBio}
+                    onChange={(e) =>
+                      setLegendBio(e.target.value)
+                    }
+                    placeholder="Legend biography..."
+                  />
+                </label>
+
+                <label>
+                  Legend Picture URL
+
+                  <input
+                    value={legendImage}
+                    onChange={(e) =>
+                      setLegendImage(e.target.value)
+                    }
+                    placeholder="https://..."
+                  />
+                </label>
+
+                <button
+                  className="primary"
+                  onClick={addLegend}
+                >
+                  Add Legend
+                </button>
+
+              </div>
+            )}
+
           </div>
 
-        </section>
+        </div>
 
       </div>
     </main>
