@@ -1,4 +1,4 @@
-import { sql } from '../../db';
+import { sql } from '../../../db';
 
 export async function GET() {
   try {
@@ -18,7 +18,7 @@ export async function GET() {
 
     return Response.json(results);
   } catch (error) {
-    console.error(error);
+    console.error('GET RESULTS ERROR:', error);
 
     return Response.json(
       { error: 'Failed to load results' },
@@ -43,7 +43,9 @@ export async function POST(request) {
 
     if (!opponent || !match_date) {
       return Response.json(
-        { error: 'Opponent and match date are required' },
+        {
+          error: 'Opponent and match date are required',
+        },
         { status: 400 }
       );
     }
@@ -64,7 +66,7 @@ export async function POST(request) {
         ${Number(home_score) || 0},
         ${Number(away_score) || 0},
         ${venue || 'Home'},
-        ${status || ''},
+        ${status || 'Completed'},
         ${notes || ''}
       )
       RETURNING
@@ -78,9 +80,11 @@ export async function POST(request) {
         notes
     `;
 
-    return Response.json(result[0], { status: 201 });
+    return Response.json(result[0], {
+      status: 201,
+    });
   } catch (error) {
-    console.error(error);
+    console.error('POST RESULT ERROR:', error);
 
     return Response.json(
       { error: 'Failed to save result' },
