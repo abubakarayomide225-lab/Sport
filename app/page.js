@@ -1,17 +1,233 @@
 'use client';
-import {useState} from 'react';
-const fixtures=[['Abubakar FC','Mowolowo FC','25 Aug 2026','12:00 PM','Home'],['Abubakar FC','Ajaawa United','30 Aug 2026','4:00 PM','Away']];
-const results=[['Abubakar FC','Oke-Odo FC','3 - 1','Won'],['Igbogbo FC','Abubakar FC','2 - 2','Draw']];
-const players=[['01','Olusanjo','Goalkeeper'],['15','Abubakar','Defender • Captain'],['05','Gbotemi','Defender'],['06','Sudiq','Midfielder'],['09','Boluwatife','Forward'],['11','Pepe','Forward']];
-export default function Home(){const [tab,setTab]=useState('home'); const [admin,setAdmin]=useState(false); const nav=['home','fixtures','results','legends','achievements','players']; return <main>
-<header><div className="brand"><div className="crest">AF</div><div><b>ABUBAKAR FC</b><span>Raising unknown talent into unstoppable football stars.</span></div></div><nav>{nav.map(x=><button key={x} onClick={()=>setTab(x)} className={tab===x?'active':''}>{x[0].toUpperCase()+x.slice(1)}</button>)}<a href="/admin">Administrator</a></nav></header>
-{tab==='home'&&<section className="hero"><div><p className="eyebrow">WELCOME TO THE OFFICIAL CLUB SITE</p><h1>ABUBAKAR<br/><em>FOOTBALL CLUB</em></h1><p className="lead">Follow our fixtures, results, legends, achievements and players — all in one place.</p><div><button className="primary" onClick={()=>setTab('fixtures')}>View fixtures</button><button className="ghost" onClick={()=>setTab('players')}>Meet the squad</button></div></div><div className="heroCard"><span>UP NEXT</span><h3>Abubakar FC</h3><strong>VS</strong><h3>Mowolowo FC</h3><p>25 AUGUST 2026 • 12:00 PM</p></div></section>}
-{tab==='fixtures'&&<Section title="Fixtures" items={fixtures.map(f=><Card title={`${f[0]} vs ${f[1]}`} meta={`${f[2]} • ${f[3]} • ${f[4]}`} />)}/>} 
-{tab==='results'&&<Section title="Results" items={results.map(r=><Card title={`${r[0]} ${r[2]} ${r[1]}`} meta={r[3]}/>)} />}
-{tab==='players'&&<section className="content"><h2>Players</h2><div className="grid">{players.map(p=><article className="player"><div className="number">{p[0]}</div><h3>{p[1]}</h3><p>{p[2]}</p></article>)}</div></section>}
-{tab==='legends'&&<section className="content"><h2>Club Legends</h2><div className="legend"><div className="avatar">★</div><div><h3>The players who built the story</h3><p>This section is ready for your legendary players, photos, biographies and career statistics.</p></div></div></section>}
-{tab==='achievements'&&<section className="content"><h2>Achievements</h2><div className="grid"><Card title="Club Honours" meta="Add trophies, tournament wins and milestones here."/><Card title="2026 Campaign" meta="Track the season record and major moments."/></div></section>}
-<footer><b>ABUBAKAR FC</b><span>Official club website • © 2026</span></footer>
-{admin&&<div className="modal"><div className="modalBox"><button className="close" onClick={()=>setAdmin(false)}>×</button><h2>Administrator</h2><p>Admin access is ready for connection to your secure account.</p><label>Email<input placeholder="admin@example.com"/></label><label>Password<input type="password" placeholder="••••••••"/></label><button className="primary full" onClick={()=>alert('Admin authentication will be connected next.')}>Log in</button></div></div>}
-</main>}
-function Section({title,items}){return <section className="content"><h2>{title}</h2><div className="grid">{items}</div></section>}; function Card({title,meta}){return <article className="card"><h3>{title}</h3><p>{meta}</p></article>}
+
+import { useEffect, useState } from 'react';
+
+export default function AdminPage() {
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const [fixtures, setFixtures] = useState([]);
+  const [showFixtureForm, setShowFixtureForm] = useState(false);
+
+  const [opponent, setOpponent] = useState('');
+  const [date, setDate] = useState('');
+  const [time, setTime] = useState('');
+  const [venue, setVenue] = useState('Home');
+
+  async function loadFixtures() {
+    try {
+      const response = await fetch('/api/fixtures');
+      const data = await response.json();
+
+      if (response.ok) {
+        setFixtures(data);
+      }
+    } catch (error) {
+      console.error('Failed to load fixtures:', error);
+    }
+  }
+
+  useEffect(() => {
+    if (loggedIn) {
+      loadFixtures();
+    }
+  }, [loggedIn]);
+
+  function login() {
+    if (
+      email === 'abubakarfc001@gmail.com' &&
+      password === 'Abubakar#1'
+    ) {
+      setLoggedIn(true);
+    } else {
+      alert('Incorrect email or password');
+    }
+  }
+
+  async function addFixture() {
+    if (!opponent || !date || !time) {
+      alert('Please fill in opponent, date and time.');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/fixtures', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          opponent,
+          match_date: date,
+          match_time: time,
+          venue,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error || 'Failed to save fixture.');
+        return;
+      }
+
+      setFixtures((current) => [data, ...current]);
+
+      setOpponent('');
+      setDate('');
+      setTime('');
+      setVenue('Home');
+      setShowFixtureForm(false);
+
+      alert('Fixture saved successfully!');
+    } catch (error) {
+      console.error(error);
+      alert('Could not connect to the database.');
+    }
+  }
+
+  if (!loggedIn) {
+    return (
+      <main className="admin-page">
+        <div className="admin-box">
+          <h1>Abubakar FC</h1>
+          <h2>Administrator Login</h2>
+          <p>Sign in to manage the club website.</p>
+
+          <label>Email</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="abubakarfc001@gmail.com"
+          />
+
+          <label>Password</label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Password"
+          />
+
+          <button onClick={login}>Log in</button>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="admin-page">
+      <div className="admin-dashboard">
+        <h1>Abubakar FC Administrator</h1>
+        <p>Welcome to the club management dashboard.</p>
+
+        <section className="admin-section">
+          <div className="section-header">
+            <div>
+              <h2>Fixtures</h2>
+              <p>Manage upcoming Abubakar FC matches.</p>
+            </div>
+
+            <button
+              className="primary"
+              onClick={() => setShowFixtureForm(!showFixtureForm)}
+            >
+              {showFixtureForm ? 'Close' : 'Add Fixture'}
+            </button>
+          </div>
+
+          {showFixtureForm && (
+            <div className="form-box">
+              <label>
+                Opponent
+                <input
+                  value={opponent}
+                  onChange={(e) => setOpponent(e.target.value)}
+                  placeholder="e.g. Mowolowo FC"
+                />
+              </label>
+
+              <label>
+                Date
+                <input
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  placeholder="e.g. 5 Sep 2026"
+                />
+              </label>
+
+              <label>
+                Time
+                <input
+                  value={time}
+                  onChange={(e) => setTime(e.target.value)}
+                  placeholder="e.g. 3:00 PM"
+                />
+              </label>
+
+              <label>
+                Venue
+                <select
+                  value={venue}
+                  onChange={(e) => setVenue(e.target.value)}
+                >
+                  <option value="Home">Home</option>
+                  <option value="Away">Away</option>
+                </select>
+              </label>
+
+              <button className="primary" onClick={addFixture}>
+                Save Fixture
+              </button>
+            </div>
+          )}
+
+          <div className="fixture-list">
+            {fixtures.map((fixture) => (
+              <div className="fixture-item" key={fixture.id}>
+                <div>
+                  <strong>
+                    Abubakar FC vs {fixture.opponent}
+                  </strong>
+
+                  <p>
+                    {fixture.match_date} • {fixture.match_time} •{' '}
+                    {fixture.venue}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <div className="admin-grid">
+          <div>
+            <h2>Results</h2>
+            <p>Update completed matches and scores.</p>
+            <button>Add Result</button>
+          </div>
+
+          <div>
+            <h2>Players</h2>
+            <p>Manage player names, numbers and positions.</p>
+            <button>Manage Players</button>
+          </div>
+
+          <div>
+            <h2>Achievements</h2>
+            <p>Add trophies, honours and milestones.</p>
+            <button>Manage Achievements</button>
+          </div>
+
+          <div>
+            <h2>Legends</h2>
+            <p>Manage your club legends and their profiles.</p>
+            <button>Manage Legends</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
