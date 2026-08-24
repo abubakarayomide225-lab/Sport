@@ -1,9 +1,3 @@
-// THIS IS THE LATEST DATABASE FILE
+import { neon } from '@neondatabase/serverless';
 
-export const sql = async () => {
-  throw new Error(
-    'Database is temporarily disabled while the website is being deployed.'
-  );
-};
-
-// Deployment update
+export const sql = neon(process.env.DATABASE_URL);
