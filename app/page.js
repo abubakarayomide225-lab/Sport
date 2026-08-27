@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 
 const defaultFixtures = [
   {
-    opponent: "Abubakar B",
+    opponent: "Abubakar ",
     match_date: "25 Aug 2026",
     match_time: "12:00 PM",
     venue: "Home",
