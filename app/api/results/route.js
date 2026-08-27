@@ -1,5 +1,4 @@
-import { sql } from '../../../db';
-
+import { sql } from '../../db';
 export async function GET() {
   try {
     const results = await sql`
